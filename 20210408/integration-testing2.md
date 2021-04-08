@@ -12,7 +12,7 @@ Depending on the test framework you use, you have to find the proper hook to tel
 
 >you can also have the class outside of every namespace, for more info see [here](https://www.automatetheplanet.com/nunit-cheat-sheet/)
 
-If you are using [xUnit.net}(https://xunit.net), you can probably achieve the same via a [collection fixture](https://xunit.net/docs/shared-context#collection-fixture), if you're on MSTest V2, you can probably use the `[AssemblyInitialize]` hook, you can find more info on [StackOverflow](https://stackoverflow.com/questions/1427443/global-test-initialize-method-for-mstest) 
+If you are using [xUnit.net](https://xunit.net), you can probably achieve the same via a [collection fixture](https://xunit.net/docs/shared-context#collection-fixture), if you're on MSTest V2, you can probably use the `[AssemblyInitialize]` hook, you can find more info on [StackOverflow](https://stackoverflow.com/questions/1427443/global-test-initialize-method-for-mstest) 
 
 [Dotnet.Testcontainers](https://github.com/HofmeisterAn/dotnet-testcontainers) also comes with some built-in classes that wraps various services, one of these classes actually wraps a SQL Server Docker image and there are few more that covers the most common databases e.g.
 * MySql
