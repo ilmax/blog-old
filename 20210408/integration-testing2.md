@@ -1,12 +1,12 @@
-In the [first part](https://dev.to/maxx_don/integration-testing-with-ef-core-part-1-1l40) of this mini series, I described how I implemented integration tests with EF core and SQL Server running on top of a Docker container. The approach exposed explained in the first blog post works but it has one very big downside, the ability to debug integration tests.
+In the [first part](https://dev.to/maxx_don/integration-testing-with-ef-core-part-1-1l40) of this mini series, I described how I implemented integration tests with EF core and SQL Server running on top of a Docker container. The approach explained in the first blog post works but it has one very big downside, the ability to debug integration tests.
 
 In order to be able to do so, we need to replace Docker compose with a code based solution and, depending on your testing framework of choice, pick the appropriate hook to start the SQL Server container.
 
-To run Docker in C# we can just start a new [Process](https://docs.microsoft.com/en-us/dotnet/api/system.diagnostics.process?view=net-5.0), configure all arguments, handle it's lifecycle and so on or, since this looks like a quite some work, pick a library that already wraps Docker and exposes it in C#. 
+To run Docker in C# we can just start a new [Process](https://docs.microsoft.com/en-us/dotnet/api/system.diagnostics.process?view=net-5.0), configure all arguments, handle it's lifecycle and so on or, since this looks like quite some work, pick a library that already wraps Docker and exposes it in C#. 
 I knew Java had [Testcontainers](https://www.testcontainers.org/) that's marketed as:
 >Testcontainers is a Java library that supports JUnit tests, providing lightweight, throwaway instances of common databases, Selenium web browsers, or anything else that can run in a Docker container.
 
-This looks exactly like what we need, so I went to look for the *dotnet* counterpart and sure enough I found [Dotnet.Testcontainers](https://github.com/HofmeisterAn/dotnet-testcontainers) and decided to give it a try.
+This is exactly what we need, so I went to look for the *dotnet* counterpart and sure enough I found [Dotnet.Testcontainers](https://github.com/HofmeisterAn/dotnet-testcontainers) and decided to give it a try.
 
 Depending on the test framework you use, you have to find the proper hook to tell testcontainers to start your SQL Server Docker container just before test execution starts. I am using [NUnit](https://nunit.org/) so the hook I picked is a class in the root namespace of the integration test project with the `[SetupFixture]` attribute applied to it.
 
@@ -14,7 +14,7 @@ Depending on the test framework you use, you have to find the proper hook to tel
 
 If you are using [xUnit.net](https://xunit.net), you can probably achieve the same via a [collection fixture](https://xunit.net/docs/shared-context#collection-fixture), if you're on MSTest V2, you can probably use the `[AssemblyInitialize]` hook, you can find more info on [StackOverflow](https://stackoverflow.com/questions/1427443/global-test-initialize-method-for-mstest) 
 
-[Dotnet.Testcontainers](https://github.com/HofmeisterAn/dotnet-testcontainers) also comes with some built-in classes that wraps various services, one of these classes actually wraps a SQL Server Docker image and there are few more that covers the most common databases e.g.
+[Dotnet.Testcontainers](https://github.com/HofmeisterAn/dotnet-testcontainers) also comes with some built-in classes that wraps various services, one of these classes actually wraps a SQL Server Docker container and there are few more that covers the most common databases e.g.
 * MySql
 * Oracle
 * Postgres
@@ -53,7 +53,7 @@ public class TestFixture
     }
 }
 ```
-With this class in place, I was able to start a container before running the first test method, the only problem I was left with was clean-up. What happens if something during test execution prevents the code to properly tear down the container? This errors manifest itself typically with an exception at startup, there can be several reasons this may happen e.g. using a duplicate container name name or use a port that's already in use on the host machine.
+With this class in place, I was able to start a container before running the first test method, the only problem I was left with was clean-up. What happens if something during test execution prevents the code to properly tear down the container? This error typically manifest itself with an exception at startup, there can be several reasons this may happen e.g. using a duplicate container name name or use a port that's already in use on the host machine.
 To cope with this limitation I could wrap the startup in a try catch statement but I wasn’t very happy with the result, so I decided to come up with a tiny [PR](https://github.com/HofmeisterAn/dotnet-testcontainers/pull/360) to allow override the `StartAsync` method in a class that derives from [TestcontainersContainer](https://github.com/HofmeisterAn/dotnet-testcontainers/blob/develop/src/DotNet.Testcontainers/Containers/Modules/TestcontainersContainer.cs), the class that wraps the actual container lifecycle, so we can derive from it and override the `StartAsync` method to implement our custom start-up logic.
 
 >Unfortunately we cannot derive from the built-in `MsSqlTestcontainer` class since it's sealed as you can see [here](https://github.com/HofmeisterAn/dotnet-testcontainers/blob/master/src/DotNet.Testcontainers/Containers/Modules/Databases/MsSqlTestcontainer.cs)
